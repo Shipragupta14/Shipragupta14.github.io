@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Link builder · Shipra Gupta</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=4">
+  <style>
+    .builder { max-width: 720px; margin: 0 auto; padding: 80px 0; }
+    .builder h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 10px; }
+    .builder > p { color: var(--muted); margin: 0 0 32px; }
+    .form { display: grid; gap: 16px; padding: 28px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line2); }
+    .form label { display: grid; gap: 6px; font: 600 .78rem var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .form input { font: 500 1rem var(--font); color: #fff; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line2); background: rgba(0, 0, 0, .35); }
+    .form input:focus { outline: 2px solid var(--violet); outline-offset: 1px; }
+    .out { display: grid; gap: 10px; margin-top: 8px; }
+    .out code { display: block; padding: 14px; border-radius: 12px; background: #090b13; border: 1px solid var(--line); font: 13px/1.6 var(--mono); color: #c4b5fd; word-break: break-all; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .tips { margin-top: 28px; color: var(--muted); font-size: .92rem; }
+    .tips li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <main class="container builder">
+    <p class="kicker">private · not linked from the site</p>
+    <h1>Personalized link builder</h1>
+    <p>Fill in the company and role. The site greets the reader by company, fills in the letter and the approval gate, and pre-writes the interview-invite email.</p>
+    <form class="form" id="form" autocomplete="off">
+      <label>Company <input name="company" placeholder="e.g. Contoso" maxlength="60"></label>
+      <label>Role <input name="role" placeholder="Senior Backend Engineer (default)" maxlength="60"></label>
+      <label>Recruiter / hiring manager first name (optional) <input name="name" placeholder="e.g. Priya" maxlength="60"></label>
+      <div class="out">
+        <code id="url"></code>
+        <div class="row">
+          <button class="btn btn-primary btn-sm" type="button" id="copy">Copy link</button>
+          <a class="btn btn-ghost btn-sm" id="open" target="_blank" rel="noopener">Open preview ↗</a>
+        </div>
+      </div>
+    </form>
+    <ul class="tips">
+      <li>Paste this link into the cover-letter field, your application email or your LinkedIn note.</li>
+      <li>Leave the name blank if you don't know who will read it. The letter will say “Dear &lt;Company&gt; Hiring Team”.</li>
+      <li>Short form also works: <code>?c=Contoso&amp;r=Senior%20SWE&amp;n=Priya</code></li>
+    </ul>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const form = document.getElementById('form');
+      const urlEl = document.getElementById('url');
+      const open = document.getElementById('open');
+      const base = new URL('index.html', location.href);
+      function build() {
+        const u = new URL(base);
+        const d = new FormData(form);
+        ['company', 'role', 'name'].forEach((k) => { const v = (d.get(k) || '').toString().trim(); if (v) u.searchParams.set(k, v); });
+        const s = location.protocol.startsWith('http') ? u.toString().replace(/index\.html(?=\?|$)/, '') : u.toString();
+        urlEl.textContent = s; open.href = s;
+        return s;
+      }
+      form.addEventListener('input', build);
+      document.getElementById('copy').addEventListener('click', async () => {
+        const s = build();
+        let ok = false;
+        try { await navigator.clipboard.writeText(s); ok = true; } catch { ok = false; }
+        if (!ok) {
+          const r = document.createRange(); r.selectNodeContents(urlEl);
+          const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+          try { ok = document.execCommand('copy'); } catch { ok = false; }
+        }
+        const t = document.getElementById('toast');
+        t.textContent = ok ? 'Link copied' : "Couldn't copy automatically. The link is selected, so press Ctrl+C.";
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2600);
+      });
+      build();
+    })();
+  </script>
+</body>
+</html>
